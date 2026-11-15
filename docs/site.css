@@ -523,3 +523,10 @@ pre code { background: none; border: 0; padding: 0; font-size: inherit; }
 @media (min-width: 720px) {
   .tile.hero { grid-template-columns: minmax(0, 1fr) 380px; }
 }
+.tile.hero .keys { margin: 0; padding-left: 18px; font-size: 13.5px; }
+.tile.hero .keys li { margin: 0 0 3px; }
+.tile.hero .opts a { font-size: 12.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+.card.active { border-color: var(--accent); }
+.card .board.view { cursor: pointer; }
+.tile .view.live { background-color: var(--board); }
+.tile.hero .view.live iframe { visibility: visible; }
