@@ -489,12 +489,12 @@ h1 b, h2 b { color: var(--accent); }
 .tile .view.live { background-color: #faf8ef; }
 .tile.hero .view.live { background-size: auto; }
 .readout-label { font-size: 12.5px; color: var(--muted); margin: 0 0 4px; }
-.tile.hero pre.state { font-size: 12px; line-height: 1.45; margin: 0; white-space: pre; overflow-x: auto; }
+.tile.hero pre.state { font-size: 12px; line-height: 1.45; margin: 0; white-space: pre; overflow: auto; max-height: min(42vh, 340px); }
 .tile.hero .state-wrap { grid-area: bars; min-width: 0; }
 .tile .opts { display: flex; flex-wrap: wrap; gap: 4px; }
 .tile .opts span {
   font-size: 12.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--fg-2);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .tile .opts span.off { opacity: .38; text-decoration: line-through; }
 .tile .opts span.last { border-color: var(--accent); color: var(--accent); font-weight: 600; }

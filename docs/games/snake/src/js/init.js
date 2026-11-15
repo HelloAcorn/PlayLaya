@@ -29,6 +29,8 @@ const mySnakeBoard = new SNAKE.Board({
     console.log("dead!");
   },
 });
+// PlayLaya: the board object (grid, phase) is what the front page reads. Gameplay is unchanged.
+window.playlayaBoard = mySnakeBoard;
 
 // Wire up the on-screen gamepad shown on touch devices (markup in index.html).
 document.querySelectorAll("#snake-gamepad button").forEach((btn) => {
