@@ -1,4 +1,4 @@
-# PlaySata
+# PlayLaya
 
 게임별 decision LLM 파인튜닝 코드를 게임마다 한 폴더씩 모아 둔 저장소예요. 입력은 텍스트 상태창, 출력은 다음 행동이에요.
 
@@ -6,7 +6,7 @@
 |---|---|---|
 | [2048_decision_ft](2048_decision_ft/) | 2048 | expectimax 전문가를 따라 배우는 LoRA 파인튜닝, 평가, Laya 평가/리플레이 |
 
-사이트: https://helloacorn.github.io/PlaySata/ (`docs/`, GitHub Pages). 2048을 브라우저에서 두면서 모델이 보는 텍스트 상태창을 같이 볼 수 있어요.
+사이트: https://helloacorn.github.io/PlayLaya/ (`docs/`, GitHub Pages). 2048을 브라우저에서 두면서 모델이 보는 텍스트 상태창을 같이 볼 수 있어요.
 
 새 게임은 `<게임>_decision_ft/` 폴더로 추가하고, 실행 방법은 각 폴더의 README를 보면 돼요.
 

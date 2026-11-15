@@ -1,4 +1,4 @@
-// PlaySata front page. Theme and sticky bar follow PlayJev's demo.js; the rest frames the vendored 2048 and
+// PlayLaya front page. Theme and sticky bar follow PlayJev's demo.js; the rest frames the vendored 2048 and
 // shows the board as the text state the model is trained on (same format as 2048_decision_ft/game2048.py).
 (function () {
   'use strict';

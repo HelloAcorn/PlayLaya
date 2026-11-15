@@ -1,4 +1,4 @@
-﻿# 2048 의사결정 LLM 파인튜닝 (텍스트 상태창 → 수 하나)
+# 2048 의사결정 LLM 파인튜닝 (텍스트 상태창 → 수 하나)
 
 PlayJev가 **화면 픽셀**을 넣고 수 하나를 고르게 했다면, 여기서는 같은 계약을 **텍스트 상태창**으로 바꿉니다.
 입력은 2048 보드 상태창, 출력은 다음 수(up/down/left/right) 하나입니다. 베이스 모델도 PlayJev와 같은
@@ -80,7 +80,7 @@ Answer:
 PlayJev의 가상환경을 그대로 씁니다(torch 2.11 cu128, transformers 5.17).
 
 ```powershell
-cd C:\workspace\playSata\2048_decision_ft
+cd C:\workspace\PlayLaya\2048_decision_ft
 $py = "C:\workspace\PlayJev\.venv\Scripts\python.exe"
 
 # 1) 데이터: 전문가 40판 (약 6만 샘플, CPU로 십수 분)
