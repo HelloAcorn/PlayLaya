@@ -18,14 +18,20 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, Subset
 
+import board as B
 import config as C
+from evaluate import play
 from frame import FrameRenderer, grid_from_state
+from game_metrics import Guard, loss_targets, metrics_row, record_game_metrics
 from image_policy import forward_slots, freeze_vision, load_image_model, prepare, slot_ids_for, to_device
 from lora import inject, is_vision_path, save_adapter
 from playjev_prompt import build_image_prompt
-from train import load_records, soft_ce, split
+from train import load_records, soft_ce, training_split
+
+# step 0 의 train loss 만 짧게 잰다. 이후 점은 직전 게임 평가 이후 마이크로배치 손실의 평균이다.
+_PROBE = 32
 
 
 def flag_passed(*flags: str) -> bool:
@@ -71,18 +77,24 @@ class ImageSFT(Dataset):
                 [r["probs"][o] for o in opts], opts.index(r["action"]))
 
 
-def make_collate(processor, max_len: int):
+def _pad_norm(rows):
+    width = max(4, max(len(t) for t in rows))
+    out = torch.zeros(len(rows), width)
+    for i, t in enumerate(rows):
+        out[i, : len(t)] = torch.tensor(t, dtype=torch.float32)
+    return out / out.sum(-1, keepdim=True).clamp_min(1e-12)
+
+
+def make_collate(processor, max_len: int, label: str = "soft"):
     def collate(items):
-        images, prompts, targets, best = zip(*items)
+        images, prompts, probs, best = zip(*items)
         enc = prepare(processor, prompts, images)
         if enc["input_ids"].shape[1] > max_len:
             raise RuntimeError(f"prompt length {enc['input_ids'].shape[1]} > {max_len}; 정답 슬롯이 잘릴 수 있어 중단")
-        k = max(len(t) for t in targets)
-        tgt = torch.zeros(len(items), max(4, k))
-        for i, t in enumerate(targets):
-            tgt[i, : len(t)] = torch.tensor(t, dtype=torch.float32)
-        tgt = tgt / tgt.sum(-1, keepdim=True).clamp_min(1e-12)
-        batch = {"targets": tgt, "n_opts": torch.tensor([len(t) for t in targets]), "best": torch.tensor(best)}
+        teacher = _pad_norm(probs)
+        chosen = _pad_norm([loss_targets(p, i, label) for p, i in zip(probs, best)])
+        batch = {"targets": chosen, "teacher": teacher,
+                 "n_opts": torch.tensor([len(p) for p in probs]), "best": torch.tensor(best)}
         for key, val in enc.items():
             batch[key] = val
         return batch
@@ -110,9 +122,11 @@ def evaluate(model, loader, slot_ids, device, dtype):
     for batch in loader:
         logits = _logits(model, batch, slot_ids, device, dtype)
         tgt = batch["targets"].to(device)
+        # KL 은 항상 전문가 soft 분포. hard 학습이어도 검증 KL 은 텍스트 경로와 같은 대상을 본다.
+        teacher = batch["teacher"].to(device) if "teacher" in batch else tgt
         ce += soft_ce(logits, tgt).tolist()
         agree += (logits.argmax(-1).cpu() == batch["best"]).tolist()
-        kl += _kl(logits, tgt).tolist()
+        kl += _kl(logits, teacher).tolist()
     if was:
         model.train()
     n = max(1, len(ce))
@@ -145,6 +159,16 @@ def dry_run(a) -> None:
     except Exception as e:
         print(f"[dry-run] processor not loaded ({type(e).__name__}: {e})", flush=True)
     print("[dry-run] no optimizer step", flush=True)
+
+
+def image_move_probs(model, processor, slot_ids, device, dtype, frames, options):
+    """학습 중인 가중치로 합법 수 확률. 호출하는 쪽에서 eval / no_grad 를 잡는다."""
+    prompts = [build_image_prompt(o) for o in options]
+    enc = to_device(prepare(processor, prompts, frames), device)
+    n_opts = torch.tensor([len(o) for o in options], device=device)
+    logits = forward_slots(model, enc, slot_ids, n_opts, device, dtype)
+    p = torch.softmax(logits, -1)
+    return [p[i, : len(o)].tolist() for i, o in enumerate(options)]
 
 
 def _step(scaler, opt, params, sched, device):
@@ -185,17 +209,17 @@ def main(a):
 
 
 def _train(a, device, out, emit, holder):
+    label = getattr(a, "label", "soft")
+    game_every = int(getattr(a, "game_eval_every", 0) or 0)
     recs = load_records(a.data)
-    tr, va = split(recs, C.VAL_FRACTION)
-    if not va:
-        va = tr[-max(4, len(tr) // 20):]
-        tr = tr[: len(tr) - len(va)]
-    if a.limit:
-        tr, va = tr[: a.limit], va[: max(4, a.limit // 4)]
-    va = va[: a.eval_samples]
-    emit({"event": "data", "records": len(recs), "train": len(tr), "val": len(va), "renderer": a.renderer})
+    tr, va = training_split(recs, a.limit, a.eval_samples)
+    emit({"event": "data", "records": len(recs), "train": len(tr), "val": len(va),
+          "renderer": a.renderer, "label": label, "model": a.model})
     if not tr:
         raise SystemExit("no training rows")
+    if game_every:
+        import matplotlib  # 평가마다 곡선을 다시 그린다. 없으면 학습을 시작하지 않는다.
+        del matplotlib
 
     processor, model, dtype = load_image_model(a.model, a.device, a.dtype)
     skip = is_vision_path if a.freeze_vision else None
@@ -210,14 +234,15 @@ def _train(a, device, out, emit, holder):
     model.train()
     params = [p for p in model.parameters() if p.requires_grad]
     emit({"event": "model", "lora_layers": n_lora, "trainable_M": round(sum(p.numel() for p in params) / 1e6, 2),
-          "dtype": str(dtype).replace("torch.", ""), "freeze_vision": bool(a.freeze_vision), "grad_ckpt": use_ckpt})
+          "dtype": str(dtype).replace("torch.", ""), "freeze_vision": bool(a.freeze_vision), "grad_ckpt": use_ckpt,
+          "model": a.model, "label": label})
     slot_ids = torch.tensor(slot_ids_for(processor.tokenizer, 4), device=device)
 
     renderer = FrameRenderer(a.renderer)
     holder[0] = renderer
     try:
         renderer.open()
-        collate = make_collate(processor, C.IMAGE_MAX_LEN)
+        collate = make_collate(processor, C.IMAGE_MAX_LEN, label)
         train_ds = ImageSFT(tr, True, a.seed, renderer)
         # 배치보다 샘플이 적으면(스모크) 마지막 배치를 버리지 않는다.
         drop = len(train_ds) >= a.micro_batch * 2
@@ -239,17 +264,71 @@ def _train(a, device, out, emit, holder):
             opt, lambda s: (s + 1) / warm if s < warm else 0.5 * (1 + math.cos(math.pi * (s - warm) / max(1, total - warm))))
         scaler = torch.amp.GradScaler("cuda", init_scale=2.0 ** 10, enabled=device.type == "cuda" and dtype == torch.float16)
         cfg = {"base_model": a.model, "targets": list(C.LORA_TARGETS), "r": a.r, "alpha": a.alpha,
-               "input": "image", "skip_visual": bool(a.freeze_vision), "dtype": a.dtype, "renderer": a.renderer}
-        emit({"event": "start", "total_steps": total, "accum": accum,
-              **evaluate(model, val_loader, slot_ids, device, dtype)})
+               "input": "image", "skip_visual": bool(a.freeze_vision), "dtype": a.dtype, "renderer": a.renderer,
+               "label": label}
+        start = {"event": "start", "total_steps": total, "accum": accum, "label": label, "model": a.model}
+        if not game_every:
+            start.update(evaluate(model, val_loader, slot_ids, device, dtype))
+        emit(start)
 
         step, best, t0, run = 0, -1.0, time.time(), []
-        while step < total:
+        window, best_score, stop = [], None, None
+        guard = Guard(getattr(a, "score_drop", C.BASE_SCORE_DROP),
+                      getattr(a, "score_patience", C.BASE_SCORE_PATIENCE),
+                      getattr(a, "kl_patience", C.BASE_KL_PATIENCE))
+
+        def model_probs(live, legal):
+            # 8GB: 판이 여러 개여도 프레임은 한 장씩. 학습 그래프는 이미 비운 뒤다.
+            out_p = []
+            with torch.no_grad():
+                for i in range(len(live)):
+                    frame = renderer.render(B.to_grid(live[i].board))
+                    out_p.extend(image_move_probs(
+                        model, processor, slot_ids, device, dtype, [frame], [legal[i]]))
+            return out_p
+
+        def game_eval(at_step, train_loss):
+            nonlocal best, best_score, stop
+            was = model.training
+            model.eval()
+            try:
+                val = evaluate(model, val_loader, slot_ids, device, dtype)
+                seeds = [a.game_eval_seed_base + i for i in range(a.game_eval_games)]
+                with torch.no_grad():
+                    games = play("model", seeds, a.game_eval_max_moves, batch=1, agreement=True,
+                                 detail=True, model_probs=model_probs)
+                row = metrics_row(at_step, train_loss, val, games, seeds)
+                record_game_metrics(out, row)
+                is_best, reason = guard.update(row["mean_score"], row["val_kl"])
+                if val["val_agreement"] > best:
+                    best = val["val_agreement"]
+                if is_best:
+                    best_score = row["mean_score"]
+                    save_adapter(model, out / "best", {**cfg, "step": at_step, "mean_score": best_score, **val})
+                shown = {k: v for k, v in row.items() if k not in ("scores", "moves", "max_tiles")}
+                emit({"event": "game_eval", **shown, "is_best": is_best})
+                emit({"event": "eval", "step": at_step, **val})
+                if reason and not getattr(a, "no_early_stop", False):
+                    stop = reason
+                    emit({"event": "stop", "step": at_step, "reason": reason, "best_mean_score": best_score})
+            finally:
+                if was:
+                    model.train()
+
+        if game_every:
+            n_probe = min(_PROBE, len(train_ds))
+            probe_loader = DataLoader(Subset(train_ds, range(n_probe)), batch_size=a.micro_batch,
+                                      shuffle=False, collate_fn=collate)
+            game_eval(0, evaluate(model, probe_loader, slot_ids, device, dtype)["val_loss"])
+
+        while step < total and stop is None:
             for i, batch in enumerate(train_loader):
                 logits = _logits(model, batch, slot_ids, device, dtype)
                 loss = soft_ce(logits, batch["targets"].to(device)).mean()
                 scaler.scale(loss / accum).backward()
                 run.append(loss.item())
+                if game_every:
+                    window.append(loss.item())
                 if (i + 1) % accum:
                     continue
                 _step(scaler, opt, params, sched, device)
@@ -258,17 +337,24 @@ def _train(a, device, out, emit, holder):
                     emit({"event": "train", "step": step, "loss": sum(run) / len(run), "lr": sched.get_last_lr()[0],
                           "grad_scale": scaler.get_scale(), "sec": round(time.time() - t0, 1)})
                     run = []
-                if step % a.eval_every == 0 or step == total:
+                do_game = bool(game_every) and step % game_every == 0
+                if do_game:
+                    train_loss = sum(window) / len(window) if window else None
+                    window = []
+                    game_eval(step, train_loss)
+                elif step % a.eval_every == 0 or step == total:
                     ev = evaluate(model, val_loader, slot_ids, device, dtype)
                     emit({"event": "eval", "step": step, **ev})
                     if ev["val_agreement"] > best:
                         best = ev["val_agreement"]
-                        save_adapter(model, out / "best", {**cfg, "step": step, **ev})
-                if step >= total:
+                        if not game_every:
+                            save_adapter(model, out / "best", {**cfg, "step": step, **ev})
+                if stop is not None or step >= total:
                     break
             train_ds.epoch += 1
         save_adapter(model, out / "final", {**cfg, "step": step})
-        emit({"event": "done", "step": step, "best_val_agreement": best, "out": str(out)})
+        emit({"event": "done", "step": step, "best_val_agreement": best, "best_mean_score": best_score,
+              "stop": stop or "max_steps", "out": str(out)})
     finally:
         renderer.close()
         holder[0] = None

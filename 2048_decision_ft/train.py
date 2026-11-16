@@ -49,6 +49,18 @@ def split(recs, frac):
     return tr, va
 
 
+def training_split(recs, limit: int, eval_samples: int):
+    """텍스트와 이미지 학습이 같은 식으로 학습/검증을 가른다."""
+    tr, va = split(recs, C.VAL_FRACTION)
+    if not va:  # 스모크처럼 에피소드가 너무 적을 때
+        va = tr[-max(4, len(tr) // 20):]
+        tr = tr[: len(tr) - len(va)]
+    if limit:
+        tr, va = tr[: limit], va[: max(4, limit // 4)]
+    va = va[: eval_samples]
+    return tr, va
+
+
 class SFTData(Dataset):
     def __init__(self, recs, train: bool, seed: int):
         self.recs, self.train, self.seed, self.epoch = recs, train, seed, 0
@@ -115,12 +127,7 @@ def main(a):
         log.write(json.dumps(rec, ensure_ascii=False) + "\n"); log.flush()
 
     recs = load_records(a.data)
-    tr, va = split(recs, C.VAL_FRACTION)
-    if not va:  # 스모크처럼 에피소드가 너무 적을 때
-        va = tr[-max(4, len(tr) // 20):]; tr = tr[: len(tr) - len(va)]
-    if a.limit:
-        tr, va = tr[: a.limit], va[: max(4, a.limit // 4)]
-    va = va[: a.eval_samples]
+    tr, va = training_split(recs, a.limit, a.eval_samples)
     emit({"event": "data", "records": len(recs), "train": len(tr), "val": len(va)})
 
     tok, model = load_base(a.model, a.device)
@@ -198,4 +205,17 @@ if __name__ == "__main__":
     p.add_argument("--freeze-vision", action=argparse.BooleanOptionalAction, default=True,
                    help="image: 비전 타워를 얼리고 언어 모델만 LoRA (8GB 기본값)")
     p.add_argument("--no-grad-ckpt", action="store_true", help="image gradient checkpointing 을 끈다. 기본은 켜짐")
+    p.add_argument("--label", choices=("soft", "hard"), default="soft",
+                   help="image 손실. soft 는 전문가 분포, hard 는 그 argmax 한 글자")
+    p.add_argument("--game_eval_every", type=int, default=0,
+                   help="image: N optimizer step 마다 10판. 0 이면 끄고, 예전처럼 검증 일치율로 best 를 고른다")
+    p.add_argument("--game_eval_games", type=int, default=C.BASE_EVAL_GAMES)
+    p.add_argument("--game_eval_seed_base", type=int, default=C.BASE_EVAL_SEED_BASE)
+    p.add_argument("--game_eval_max_moves", type=int, default=C.BASE_EVAL_MAX_MOVES)
+    p.add_argument("--kl_patience", type=int, default=C.BASE_KL_PATIENCE,
+                   help="게임 평가에서 검증 KL 이 이 횟수만큼 연속으로 안 줄면 멈춘다")
+    p.add_argument("--score_patience", type=int, default=C.BASE_SCORE_PATIENCE)
+    p.add_argument("--score_drop", type=float, default=C.BASE_SCORE_DROP,
+                   help="10판 평균이 최고보다 이 비율 넘게 낮으면 한 번으로 센다. 기본 0.30")
+    p.add_argument("--no_early_stop", action="store_true")
     main(p.parse_args())

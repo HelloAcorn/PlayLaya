@@ -4,6 +4,7 @@
 accelerate==1.15.0
 # RTX 2070 SUPER: load the image model in float16, not bfloat16.
 Pillow==13.0.0
+matplotlib==3.11.2
 # Only for --renderer playwright. Then: python -m playwright install chromium
 playwright==1.65.2
 # AutoProcessor for Qwen3.5 imports torchvision. Install the wheel that matches

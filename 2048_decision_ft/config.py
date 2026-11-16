@@ -66,3 +66,22 @@ IMAGE_BATCH = 8
 IMAGE_EVAL_BATCH = 1
 IMAGE_EVAL_GAMES = 100       # 텍스트 평가 기본 16판은 그대로. 이미지 비교만 100판
 IMAGE_MAX_LEN = 1024         # 448 프레임의 시각 토큰 + plain 프롬프트. 정답 슬롯이 잘리면 안 됨
+
+# ---- 베이스 모델 이미지 런 (run_base_image.py). train.py --input image 만 치면 10판 평가는 꺼져 있다.
+BASE_EPISODES = 60             # 상한. 버킷이 차면 그 전에 멈춘다.
+BASE_TARGET_STATES = 8000
+BASE_BUCKET_CAP = 2000         # <=128, 256, 512, >=1024 각각. 합이 target 과 같다.
+BASE_EPS = 0.02
+BASE_GEN_MAX_MOVES = 5000      # 1024 구간을 채우려고 평가 수 상한(3000)보다 길다
+BASE_EVAL_MAX_MOVES = 3000
+BASE_EVAL_GAMES = 10
+BASE_EVAL_SEED_BASE = 100_000  # 100000..100009. 학습 시드(0부터)와 안 겹친다
+BASE_GAME_EVAL_EVERY = 100     # 10판이 약 5분. 100 optimizer step 마다 한 번.
+BASE_MAX_STEPS = 2000          # 8천 샘플, 유효 배치 8 이면 에폭당 약 950 step. 두 에폭 남짓.
+BASE_OVERFIT_LIMIT = 1000
+BASE_OVERFIT_STEPS = 400       # 1천 샘플, 배치 8 이면 에폭당 125 step. 약 3 에폭.
+BASE_OVERFIT_FACTOR = 0.6      # 마지막 손실이 mean(log n_legal) 의 이 배수보다 낮아야 본학습
+BASE_KL_PATIENCE = 4
+BASE_SCORE_PATIENCE = 2
+BASE_SCORE_DROP = 0.30
+BASE_SEED_BASE = 0

@@ -16,6 +16,7 @@ import board as B
 import config as C
 from expert import Expert
 from game2048 import ACTIONS, Game2048, render_state
+from game_metrics import bucket_caps, finished_collecting, should_keep, tile_bucket
 from prompt import SYSTEM_PROMPT, user_text
 
 
@@ -60,8 +61,17 @@ def main(a):
     elif a.policy == "model":
         from policy import LMPolicy
         pol = LMPolicy(a.model, a.adapter)
+    if a.bucket_cap is not None and len(a.bucket_cap) == 0:
+        a.bucket_cap = None
+    balancing = bool(a.target_states) or a.bucket_cap is not None
+    caps = bucket_caps(a.target_states, a.bucket_cap)
+    counts = {b: 0 for b in caps}
     n = 0; t0 = time.time()
+    paired = None
     try:
+        if a.paired_text:
+            pp = Path(a.paired_text); pp.parent.mkdir(parents=True, exist_ok=True)
+            paired = open(pp, "a" if a.append else "w", encoding="utf-8")
         with open(out, "a" if a.append else "w", encoding="utf-8") as f:
             for ep in range(a.episodes):
                 seed = a.seed_base + ep
@@ -71,9 +81,11 @@ def main(a):
                     state = render_state(g)
                     probs = ex.probs(g.board)
                     rec = record(ep, seed, g, probs, state)
+                    text_rec = rec
                     legal = rec["legal"]
                     if a.input == "image":
                         # 라벨(probs/action/state/legal)은 텍스트 기록과 같다. 프레임은 학습 때 grid 로 다시 그린다.
+                        rec = dict(rec)
                         rec["input"] = "image"
                         rec["grid"] = B.to_grid(g.board)
                         rec["messages"] = image_messages(legal)
@@ -86,15 +98,35 @@ def main(a):
                         played = legal[max(range(len(legal)), key=p.__getitem__)]
                     else:
                         played = rec["action"]
+                    # 버킷은 이 수의 라벨이 붙은 보드, 즉 두기 전 최대 타일. 균형이 꺼져 있으면 재지 않는다.
+                    before = g.max_tile() if balancing else 0
                     res = g.step(played)
                     rec["played"] = played
                     rec["result"] = res  # 둔 수의 결과: 얻은 점수, 누적 점수, 최대 타일, 종료 여부
-                    f.write(json.dumps(rec, ensure_ascii=False) + "\n"); n += 1
+                    bucket = tile_bucket(before) if balancing else ""
+                    keep = (not balancing) or should_keep(bucket, counts, caps, n, a.target_states)
+                    if keep:
+                        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                        if paired is not None:
+                            text_rec["played"] = played
+                            text_rec["result"] = res
+                            paired.write(json.dumps(text_rec, ensure_ascii=False) + "\n")
+                        if balancing:
+                            counts[bucket] = counts.get(bucket, 0) + 1
+                        n += 1
+                    if balancing and finished_collecting(n, a.target_states, counts, caps):
+                        break
                 print(f"[gen] ep {ep} seed {seed} eps {eps:.2f} moves {g.moves} score {g.score} max {g.max_tile()} "
                       f"| total {n} records {time.time() - t0:.0f}s", flush=True)
+                if balancing and finished_collecting(n, a.target_states, counts, caps):
+                    break
     finally:
         if image_pol is not None:
             image_pol.close()
+        if paired is not None:
+            paired.close()
+    if balancing:
+        print(f"[gen] buckets {counts} caps {caps} target {a.target_states}", flush=True)
     print(f"[gen] wrote {n} records to {out}")
 
 
@@ -114,4 +146,8 @@ if __name__ == "__main__":
                    help="image DAgger 가 프레임을 그리는 방법. 전문가 생성은 보드만 저장하고 학습 때 다시 그린다")
     p.add_argument("--device", default=C.DEVICE)
     p.add_argument("--dtype", default=None, help="image 모델 dtype. 기본 float16 (Turing)")
+    p.add_argument("--target_states", type=int, default=0, help="이 수만큼 쓰면 멈춘다. 0 이면 에피소드를 다 돈다")
+    p.add_argument("--bucket_cap", type=int, nargs="*", default=None,
+                   help="최대 타일 버킷 상한. 1개면 전 버킷, 4개면 <=128 256 512 >=1024. 비우면 target 을 4등분")
+    p.add_argument("--paired_text", default=None, help="같은 수를 텍스트 jsonl 로도 쓴다 (시드와 라벨이 같다)")
     main(p.parse_args())

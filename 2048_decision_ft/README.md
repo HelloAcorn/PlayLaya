@@ -81,8 +81,12 @@ Answer:
 | `policy.py` | 텍스트 모델 로딩, 글자 슬롯 판독 (학습/평가 공용) |
 | `train.py` | 텍스트 LoRA SFT. `--input image` 이면 이미지 학습 |
 | `evaluate.py` | 무작위/전문가/모델 N판 비교. `--input image` 이면 이미지 평가 |
-| `requirements.txt` | 이미지 경로에 새로 필요한 Pillow, Playwright 버전 |
+| `requirements.txt` | 이미지 경로에 새로 필요한 Pillow, Playwright, matplotlib, accelerate |
 | `test_image.py` | CPU 스모크 (프레임, 프롬프트, 텍스트 경로 회귀) |
+| `game_metrics.py` | 10판 지표(jsonl/csv), 곡선, 버킷, 조기 종료 |
+| `run_base_image.py` | 베이스 모델 런: 데이터, 1천 과적합 확인, 본학습 |
+| `run_base_image.ps1` | 위 드라이버를 Windows 에서 떼어 실행 |
+| `test_base_image.py` | 지표/곡선/버킷/조기 종료, CPU 에서 작은 모델로 한 줄 |
 
 ## 실행 (PowerShell, 이 폴더에서)
 
@@ -251,3 +255,65 @@ python gen_data.py --input image --episodes 20 --policy model --adapter ckpt\ima
 `results/` 는 gitignore 다. GPU 학습, 100판 평가, Playwright Chromium 프레임은 이 저장소를 만든 환경에서 돌리지 않았다.
 `python test_image.py` 가 CPU 에서 프레임과 프롬프트를 확인하고, 프로세서를 받을 수 있으면 한 배치도 만든다.
 층을 2개로 줄인 무작위 Qwen3.5 로 순전파와 LoRA 역전파(비전 기울기는 없음)까지 CPU 에서 확인했다.
+
+## 베이스 모델에서 이미지 학습
+
+학습은 **Qwen/Qwen3.5-0.8B-Base** 에서 시작한다. PlayJev-0.8B 는 제로샷 기준선이라 이 런의 시작 가중치가 아니다.
+`run_base_image.py` 에 PlayJev-0.8B 를 넘기면 바로 멈춘다.
+로컬 폴더 `C:\workspace\PlayJev\models\Qwen3.5-0.8B-Base` 가 있으면 `--model` 을 비워도 그 체크포인트를 쓴다.
+
+입력은 위의 이미지 경로 그대로다. 긴 변 448, JPEG 0.85, PlayJev plain 프롬프트, 마지막 위치의 ` A`~` D` softmax, 학습 때 선택지 순서는 섞는다.
+기본 손실은 전문가 soft 분포의 교차 엔트로피다. `--label hard` 면 그 argmax 한 글자만 맞춘다. 검증 KL 은 어느 쪽이든 전문가 분포를 기준으로 한다.
+
+데이터는 전문가가 두고, 에피소드마다 수의 2%만 무작위다. 최대 타일 버킷(<=128, 256, 512, >=1024)마다 상한을 두어 후반 국면이 초반에 묻히지 않게 한다.
+같은 판에서 `--paired_text` 로 텍스트 jsonl 도 쓰면 시드와 라벨이 같다. 나중에 텍스트 학습과 나란히 볼 때 그 파일을 쓴다.
+
+10판 평가는 optimizer step 0(학습 전)과 그 뒤 `--game_eval_every` 마다 한다. 시드는 100000..100009, 수 상한 기본 3000.
+한 줄에 평균/중앙 점수, 평균 수, 최대 타일 분포, 플레이 중 전문가 일치, 학습 손실, 검증 손실/KL 이 들어간다.
+step 0 의 학습 손실은 학습 샘플 32개를 한 번 잰 값이고, 그 다음부터는 직전 10판 평가 이후 학습 손실의 평균이다.
+`ckpt\base_image\metrics.jsonl`, `metrics.csv`, `score_curve.png` 를 평가마다 다시 쓴다. 그림 위는 10판 평균과 최소-최대 띠, 중앙값. 아래는 학습/검증 손실과 일치율이다.
+10판이 약 5분이라 기본 간격은 100 step 이다. `game_eval_every 0` 이면 이 평가는 꺼지고, 예전처럼 검증 일치율로 `best` 를 고른다.
+
+조기 종료: `--max_steps`(기본 2000). 10판 평균이 지금까지 최고보다 30% 넘게 낮은 평가가 연속 2번이면 멈춘다.
+검증 KL 이 `--kl_patience`(기본 4)번 연속으로 줄지 않아도 멈춘다. `best` 는 10판 평균 점수가 가장 높던 가중치다.
+
+8GB RTX 2070 SUPER: float16, 언어 모델 LoRA, 비전 고정, gradient checkpointing, micro batch 1, 유효 배치 8.
+
+한 번에:
+
+```powershell
+pip install -r requirements.txt
+python -u run_base_image.py --out ckpt\base_image --model C:\workspace\PlayJev\models\Qwen3.5-0.8B-Base
+```
+
+창을 닫아도 돌아가게:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run_base_image.ps1 --model C:\workspace\PlayJev\models\Qwen3.5-0.8B-Base
+```
+
+진행은 `ckpt\base_image\progress.log`, 끝나면 `ckpt\base_image\.done` 이다. 콘솔을 떼면 `console.log` / `console.err` 도 생긴다.
+이미 `.done` 이 있으면 다시 돌리지 않는다. 다시 하려면 `--force`.
+
+단계별로 같은 기본값:
+
+```powershell
+python -u gen_data.py --input image --policy expert --episodes 60 --max_moves 5000 --eps 0.02 0.02 --seed_base 0 --target_states 8000 --bucket_cap 2000 --out data\base_image.jsonl --paired_text data\base_image_text.jsonl
+
+python -u train.py --input image --data data\base_image.jsonl --out ckpt\base_image\overfit --model C:\workspace\PlayJev\models\Qwen3.5-0.8B-Base --dtype float16 --label soft --limit 1000 --max_steps 400 --micro_batch 1 --batch 8 --game_eval_every 0 --epochs 1
+
+python -u train.py --input image --data data\base_image.jsonl --out ckpt\base_image --model C:\workspace\PlayJev\models\Qwen3.5-0.8B-Base --dtype float16 --label soft --max_steps 2000 --epochs 1 --micro_batch 1 --batch 8 --game_eval_every 100 --game_eval_games 10 --game_eval_seed_base 100000 --game_eval_max_moves 3000 --kl_patience 4 --score_patience 2 --score_drop 0.30
+```
+
+과적합 확인은 학습에 쓰는 1천 줄에서 균일 정책의 평균 교차 엔트로피 `mean(log 합법 수 개수)` 를 구하고, 마지막 20개 학습 로그의 평균이 그 값의 0.6배보다 낮아야 본학습으로 넘어간다. 아니면 `overfit_failed.json` 을 쓰고 종료 코드 2 이며 `.done` 은 없다.
+데이터 파일이 이미 있으면 만들지 않는다. 다시 만들려면 `--regen`.
+
+argmax 만 따라가게 하려면 위 명령에 `--label hard` 를 붙인다.
+
+텍스트와 나중에 비교할 때 짝 데이터는 `data\base_image_text.jsonl` 이다. 학습 시드 0과 평가 시드 100000 은 겹치지 않는다.
+
+```powershell
+python test_base_image.py
+```
+
+GPU 본학습과 10판 평가는 이 환경에서 돌리지 않았다. `test_base_image.py` 가 지표 파일과 곡선을 CPU 에서 확인하고, 프로세서를 받을 수 있으면 층을 줄인 무작위 Qwen3.5 로 한 수를 두어 같은 기록 함수에 넣는다.
