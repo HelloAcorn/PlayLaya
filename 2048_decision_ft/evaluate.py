@@ -1,5 +1,6 @@
 """평가: 학습 시드와 겹치지 않는 시드로 N판을 두고 점수/최대 타일/도달률을 비교. 수는 argmax.
 vs_expert = (모델 - 무작위) / (전문가 - 무작위)  (PlayJev README의 'vs teacher'와 같은 정의)
+--input image 는 같은 집계를 results/<run>/eval.json 에 쓴다. 기본값 text 의 출력 파일 형식은 그대로다.
 
   python evaluate.py --policies random expert model --adapter ckpt/run1/best --games 16
 """
@@ -18,11 +19,12 @@ from game2048 import Game2048, render_state
 
 
 def play(policy: str, seeds: list[int], max_moves: int, adapter=None, model_path=C.MODEL_PATH, batch=C.EVAL_BATCH,
-         agreement=False) -> dict:
+         agreement=False, detail=False, model_probs=None) -> dict:
     games = [Game2048(s) for s in seeds]
     ex = Expert(); rng = random.Random(7)
     lm = None
-    if policy == "model":
+    # model_probs 가 있으면 이미지 정책이 수를 고른다. 텍스트 호출은 이 인자를 넘기지 않는다.
+    if policy == "model" and model_probs is None:
         from policy import LMPolicy
         lm = LMPolicy(model_path, adapter)
     agree = []; t0 = time.time()
@@ -36,10 +38,14 @@ def play(policy: str, seeds: list[int], max_moves: int, adapter=None, model_path
         elif policy == "expert":
             acts = [ex.act(g.board) for g in live]
         else:
-            acts = []
-            for s in range(0, len(live), batch):
-                ps = lm.probs([render_state(g) for g in live[s:s + batch]], legal[s:s + batch])
-                acts += [l[max(range(len(l)), key=p.__getitem__)] for p, l in zip(ps, legal[s:s + batch])]
+            if model_probs is not None:
+                ps = model_probs(live, legal)
+                acts = [l[max(range(len(l)), key=p.__getitem__)] for p, l in zip(ps, legal)]
+            else:
+                acts = []
+                for s in range(0, len(live), batch):
+                    ps = lm.probs([render_state(g) for g in live[s:s + batch]], legal[s:s + batch])
+                    acts += [l[max(range(len(l)), key=p.__getitem__)] for p, l in zip(ps, legal[s:s + batch])]
             if agreement:
                 agree += [ex.act(g.board) == a for g, a in zip(live, acts)]
         for g, act in zip(live, acts):
@@ -52,10 +58,21 @@ def play(policy: str, seeds: list[int], max_moves: int, adapter=None, model_path
            "sec": round(time.time() - t0, 1)}
     if agree:
         res["expert_agreement"] = sum(agree) / len(agree)
+    if detail:
+        dist = {}
+        for t in tiles:
+            dist[str(t)] = dist.get(str(t), 0) + 1
+        res["max_tile_distribution"] = dict(sorted(dist.items(), key=lambda kv: int(kv[0])))
+        res["scores"] = scores
+        res["max_tiles"] = tiles
+        res["moves"] = [g.moves for g in games]
     return res
 
 
 def main(a):
+    if a.input == "image":
+        from eval_image import main as image_main
+        return image_main(a)
     seeds = [a.seed_base + i for i in range(a.games)]
     results = {}
     for pol in a.policies:
@@ -71,7 +88,10 @@ def main(a):
               f"{r['reach_1024']:>10.2f} {r['reach_2048']:>10.2f} {r.get('vs_expert', float('nan')):>10.2f}")
     C.RESULTS_DIR.mkdir(exist_ok=True)
     out = Path(a.out or C.RESULTS_DIR / f"eval_{int(time.time())}.json")
-    out.write_text(json.dumps({"args": vars(a), "results": results}, indent=1, ensure_ascii=False), encoding="utf-8")
+    # 이미지 전용 플래그는 텍스트 결과 파일에 넣지 않는다. 예전에 저장하던 args 키만 남긴다.
+    args_out = {k: v for k, v in vars(a).items()
+                if k not in ("input", "renderer", "dtype", "run", "seed", "data", "device")}
+    out.write_text(json.dumps({"args": args_out, "results": results}, indent=1, ensure_ascii=False), encoding="utf-8")
     print(f"saved {out}")
 
 
@@ -86,4 +106,11 @@ if __name__ == "__main__":
     p.add_argument("--batch", type=int, default=C.EVAL_BATCH)
     p.add_argument("--agreement", action="store_true", help="모델 수가 전문가 argmax와 같은 비율도 계산")
     p.add_argument("--out", default=None)
+    p.add_argument("--input", choices=("text", "image"), default="text")
+    p.add_argument("--renderer", choices=("pil", "playwright"), default=C.IMAGE_RENDERER)
+    p.add_argument("--dtype", default=None, help="image dtype. 기본 float16. bfloat16 은 PlayJev 로더와 같음")
+    p.add_argument("--run", default=None, help="image 결과를 results/<run>/eval.json 에 저장")
+    p.add_argument("--seed", type=int, default=C.SEED, help="image 검증셋 선택지 섞기 시드 (학습 --seed 와 같게)")
+    p.add_argument("--data", nargs="*", default=None, help="image 검증 KL 에 쓸 jsonl (학습과 같은 파일)")
+    p.add_argument("--device", default=C.DEVICE)
     main(p.parse_args())

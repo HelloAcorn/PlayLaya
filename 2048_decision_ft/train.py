@@ -1,6 +1,7 @@
 """LoRA SFT. 손실 = 전문가 soft target과 '합법 수 글자' softmax 사이의 교차 엔트로피 (PlayJev train_sft와 같은 방식).
 다음 토큰 손실이나 텍스트 정답은 학습하지 않음. 선택지 순서는 샘플마다 무작위로 섞어 글자 위치 편향을 없앰.
 정밀도: 베이스 fp16 고정, LoRA 가중치 fp32, fp16 autocast + GradScaler, 판독은 fp32.
+--input image 는 화면 한 장 경로(train_image.py)다. 기본값 text 의 학습 루프는 그대로다.
 
   python train.py --data data/clone.jsonl --out ckpt/run1
   python train.py --data data/clone.jsonl --out ckpt/smoke --max_steps 2 --limit 64
@@ -99,6 +100,11 @@ def evaluate(model, loader, slot_ids, device):
 
 
 def main(a):
+    if a.input == "image" or a.dry_run or a.smoke:
+        if (a.dry_run or a.smoke) and a.input != "image":
+            raise SystemExit("[dry-run] 이 스모크는 --input image 용입니다. 텍스트 스모크는 --max_steps 2 --limit 32")
+        from train_image import main as image_main
+        return image_main(a)
     torch.manual_seed(a.seed); random.seed(a.seed)
     device = torch.device(a.device)
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
@@ -184,4 +190,12 @@ if __name__ == "__main__":
     p.add_argument("--eval_every", type=int, default=C.EVAL_EVERY)
     p.add_argument("--eval_samples", type=int, default=C.EVAL_SAMPLES)
     p.add_argument("--seed", type=int, default=C.SEED)
+    p.add_argument("--input", choices=("text", "image"), default="text")
+    p.add_argument("--dry-run", action="store_true", help="이미지 스모크: 프레임/프롬프트/프로세서만 확인하고 학습하지 않음")
+    p.add_argument("--smoke", action="store_true", help="--dry-run 과 같음")
+    p.add_argument("--renderer", choices=("pil", "playwright"), default=C.IMAGE_RENDERER)
+    p.add_argument("--dtype", default=None, help="image 가중치 dtype. 기본 float16. PlayJev 로더와 맞추려면 bfloat16")
+    p.add_argument("--freeze-vision", action=argparse.BooleanOptionalAction, default=True,
+                   help="image: 비전 타워를 얼리고 언어 모델만 LoRA (8GB 기본값)")
+    p.add_argument("--no-grad-ckpt", action="store_true", help="image gradient checkpointing 을 끈다. 기본은 켜짐")
     main(p.parse_args())

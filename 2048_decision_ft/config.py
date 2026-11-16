@@ -49,3 +49,20 @@ SEED = 0
 EVAL_GAMES = 16
 EVAL_MAX_MOVES = 3000
 EVAL_BATCH = 16
+
+# ---- 이미지 경로 (텍스트 기본값은 위와 같다. --input image 일 때만 씀)
+# PlayJev-0.8B 는 제로샷 기준선. 학습은 텍스트와 같이 Qwen3.5-0.8B-Base 에서 시작한다.
+# MODEL_PATH 가 로컬에 있으면 그 체크포인트를 쓰고, 없으면 허깅페이스 id 를 받는다.
+IMAGE_BASE_MODEL = "Qwen/Qwen3.5-0.8B-Base"
+PLAYJEV_MODEL = "OmniJev/PlayJev-0.8B"
+# RTX 2070 SUPER(Turing, sm_75)에는 bf16 텐서코어가 없다. PlayJev 로더는 bfloat16 이지만
+# 이 카드에서는 fp16 가중치 + fp16 autocast + fp32 LoRA 가 맞다. --dtype bfloat16 으로 되돌릴 수 있다.
+IMAGE_DTYPE = "float16"
+IMAGE_RENDERER = "pil"       # pil(기본, 빠름) | playwright(브라우저 canvas)
+FRAME_LONG_SIDE = 448        # pj_shim.js frameSize. 긴 변, 비율 유지
+JPEG_QUALITY = 85            # pj_shim.js frameQuality 0.85
+IMAGE_MICRO_BATCH = 1
+IMAGE_BATCH = 8
+IMAGE_EVAL_BATCH = 1
+IMAGE_EVAL_GAMES = 100       # 텍스트 평가 기본 16판은 그대로. 이미지 비교만 100판
+IMAGE_MAX_LEN = 1024         # 448 프레임의 시각 토큰 + plain 프롬프트. 정답 슬롯이 잘리면 안 됨

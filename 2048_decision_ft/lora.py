@@ -28,14 +28,28 @@ class LoRALinear(nn.Module):
         return y + (d * self.scale).to(y.dtype)
 
 
-def inject(model: nn.Module, targets, r: int, alpha: float, dropout: float) -> int:
-    """베이스 전체를 얼린 뒤 대상 Linear만 LoRA로 감쌈 (임베딩, 노름 등은 학습 안 함)."""
+_VISION = {"visual", "vision", "vision_tower", "vision_model"}
+
+
+def is_vision_path(name: str) -> bool:
+    """이미지 학습에서 비전 타워 Linear 는 LoRA 에서 뺀다. 텍스트 모델에는 이 이름이 없다."""
+    return any(part in _VISION for part in name.split("."))
+
+
+def inject(model: nn.Module, targets, r: int, alpha: float, dropout: float, *, skip=None) -> int:
+    """베이스 전체를 얼린 뒤 대상 Linear만 LoRA로 감쌈 (임베딩, 노름 등은 학습 안 함).
+
+    skip 이 None 이면 기존과 같다. 이미지 어댑터는 skip=is_vision_path 로 언어 모델만 감싼다.
+    """
     for p in model.parameters():
         p.requires_grad_(False)
     n = 0
     for name, mod in list(model.named_modules()):
         for child_name, child in list(mod.named_children()):
             if child_name in targets and isinstance(child, nn.Linear):
+                full = f"{name}.{child_name}" if name else child_name
+                if skip is not None and skip(full):
+                    continue
                 setattr(mod, child_name, LoRALinear(child, r, alpha, dropout)); n += 1
     if n == 0:
         raise ValueError(f"no Linear layer matched {targets}")
@@ -55,7 +69,9 @@ def save_adapter(model: nn.Module, path, cfg: dict) -> None:
 def load_adapter(model: nn.Module, path) -> dict:
     path = Path(path)
     cfg = json.loads((path / "adapter_config.json").read_text(encoding="utf-8"))
-    inject(model, cfg["targets"], cfg["r"], cfg["alpha"], 0.0)
+    # 텍스트 어댑터에는 skip_visual 이 없다. 그때는 이름 맞는 Linear 를 전부 감싼다.
+    skip = is_vision_path if cfg.get("skip_visual") else None
+    inject(model, cfg["targets"], cfg["r"], cfg["alpha"], 0.0, skip=skip)
     sd = torch.load(path / "adapter.pt", map_location="cpu")
     missing, unexpected = model.load_state_dict(sd, strict=False)
     bad = [k for k in missing if "lora_" in k]
