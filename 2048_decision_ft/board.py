@@ -1,3 +1,10 @@
+# Adapted from OmniJev/PlayJev playjev/teachers/2048.py (Apache License 2.0).
+# https://github.com/OmniJev/PlayJev/blob/main/playjev/teachers/2048.py
+# License text: docs/licenses/PlayJev-LICENSE.txt
+# Upstream file has no copyright header. The grant is the PlayJev LICENSE.
+# Modified: the 64-bit nibble layout and the line heuristic match the teacher.
+# Up/down go through a transpose instead of the column-unpack tables, and each
+# move also returns the score gained. The teacher class is not copied.
 """2048 비트보드: 64비트 정수 하나에 16칸, 칸마다 4비트 지수(0=빈칸, k=2**k).
 grid[r][c]는 4*(4r+c) 비트에 있음. 행 이동은 65536 크기 테이블 조회, 위/아래는 전치 후 좌/우.
 (PlayJev playjev/teachers/2048.py의 비트보드/휴리스틱을 단순화해 가져옴, Apache-2.0)"""

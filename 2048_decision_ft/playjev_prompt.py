@@ -2,6 +2,7 @@
 # Vendored from playjev/model.py (plain-template builders only).
 # https://github.com/OmniJev/PlayJev/blob/main/playjev/model.py
 # License text: docs/licenses/PlayJev-LICENSE.txt
+# Upstream playjev/model.py has no copyright header. Nothing was stripped from it.
 # Modified: the chat template, temporal frame stacking, and PlayJevModel runtime are not copied.
 # 2048 option sentences below are from games/2048/pj_hook.js, not from the shorter phrases in prompt.py.
 """PlayJev plain 프롬프트 (openjev-letters-v1 문구, 프레임이 state).

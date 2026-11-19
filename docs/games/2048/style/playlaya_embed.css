@@ -1,4 +1,4 @@
-/* PlayLaya: only applies when the page is opened as index.html?embed (the board on the site's front page).
+/* PlayVLA: only applies when the page is opened as index.html?embed (the board on the site's front page).
    Hides the long text under the board so the frame shows the score, New Game and the grid. */
 html.embed body { margin: 0; padding: 12px 0 0; background: transparent; }
 html.embed .game-intro,

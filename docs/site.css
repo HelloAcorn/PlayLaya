@@ -1,6 +1,9 @@
-/* PlayLaya site styles.
-   Adapted from PlayJev's demo/demo.css (OmniJev/PlayJev, Apache License 2.0, see licenses/PlayJev-LICENSE.txt).
-   The PlayJev rules are kept as they were; PlayLaya additions are at the bottom of the file. */
+/* Adapted from OmniJev/PlayJev demo/demo.css (Apache License 2.0).
+   https://github.com/OmniJev/PlayJev/blob/main/demo/demo.css
+   License text: licenses/PlayJev-LICENSE.txt (repo path docs/licenses/PlayJev-LICENSE.txt).
+   Upstream demo.css has no copyright header. The grant is the PlayJev LICENSE.
+   Modified for the PlayVLA front page. PlayJev rules are kept as they were.
+   Rules added in this repo are under the "PlayVLA additions" marker at the bottom. */
 :root {
   color-scheme: light;
   --bg: #f4f6fa;
@@ -483,7 +486,7 @@ footer {
 h2 { position: relative; }
 h1 b, h2 b { color: var(--accent); }
 
-/* ================================================================ PlayLaya additions */
+/* ================================================================ PlayVLA additions */
 /* the front-page board is the real game, so it takes clicks, taps and keys */
 .tile .view.live iframe { pointer-events: auto; visibility: visible; }
 .tile .view.live { background-color: #faf8ef; }

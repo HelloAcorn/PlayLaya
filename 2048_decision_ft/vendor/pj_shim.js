@@ -1,6 +1,8 @@
-// Vendored unchanged from OmniJev/PlayJev games/_shared/pj_shim.js (Apache-2.0).
+// Vendored from OmniJev/PlayJev games/_shared/pj_shim.js (Apache-2.0).
 // https://github.com/OmniJev/PlayJev/blob/main/games/_shared/pj_shim.js
 // License text: docs/licenses/PlayJev-LICENSE.txt
+// Upstream file has no copyright header. The grant is the PlayJev LICENSE.
+// Modified: this attribution header only. The script body is unchanged.
 // frame() scales the canvas so the long side is frameSize (448) and returns a JPEG at frameQuality 0.85.
 //
 // PlayJev shim. Injected before any game script (Playwright add_init_script).

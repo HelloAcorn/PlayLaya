@@ -2,7 +2,7 @@
 
 Upstream: gabrielecirulli/2048 (MIT, see LICENSE.txt and UPSTREAM), copied from PlayJev's `demo/games/2048/`.
 
-PlayLaya changes:
+PlayVLA changes:
 
 - Removed PlayJev's training/demo hooks from `<head>` (`pj_silence.js`, `_shared/pj_shim.js`, `pj_hook.js`,
   `pj_bridge.js`) and deleted `pj_hook.js`, so the page is the plain upstream game played with arrow keys or swipes.

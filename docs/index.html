@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PlayLaya</title>
+<title>PlayVLA</title>
 <meta name="description" content="게임 상태창을 텍스트로 넣고 다음 수 하나를 고르게 하는 게임별 decision LLM 파인튜닝. 첫 게임은 2048.">
-<meta property="og:title" content="PlayLaya">
+<meta property="og:title" content="PlayVLA">
 <meta property="og:description" content="게임 상태창을 텍스트로 넣고 다음 수 하나를 고르게 하는 게임별 decision LLM 파인튜닝. 첫 게임은 2048.">
 <meta property="og:type" content="website">
 <link rel="icon" href="games/2048/favicon.ico">
@@ -15,14 +15,14 @@
 
 <header class="top">
   <div class="wrap bar">
-    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span>PlayLaya</a>
+    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span>PlayVLA</a>
     <nav>
       <a href="#gallery">게임</a>
       <a href="#how">파인튜닝</a>
       <a href="#run">실행 방법</a>
       <a href="#credits">게임 출처</a>
       <span class="navgap"></span>
-      <a class="icon" href="https://github.com/HelloAcorn/PlayLaya" title="GitHub" aria-label="GitHub">
+      <a class="icon" href="https://github.com/HelloAcorn/playjev-notes" title="GitHub" aria-label="GitHub">
         <svg viewBox="0 0 16 16" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
       </a>
       <button id="theme" type="button" title="테마 바꾸기">다크</button>
@@ -33,11 +33,11 @@
 <main id="top">
 
   <section class="lead wrap">
-    <h1 class="pagetitle">PlayLaya: 텍스트 상태창을 보고<br>다음 수를 고르는 게임 LLM</h1>
+    <h1 class="pagetitle">PlayVLA: 텍스트 상태창을 보고<br>다음 수를 고르는 게임 LLM</h1>
 
     <div class="hero-buttons">
-      <a class="btn btn-code" href="https://github.com/HelloAcorn/PlayLaya"><svg viewBox="0 0 16 16" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg> <span>Code</span></a>
-      <a class="btn btn-jev" href="https://github.com/HelloAcorn/PlayLaya/tree/main/2048_decision_ft"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg> 2048 파인튜닝</a>
+      <a class="btn btn-code" href="https://github.com/HelloAcorn/playjev-notes"><svg viewBox="0 0 16 16" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg> <span>Code</span></a>
+      <a class="btn btn-jev" href="https://github.com/HelloAcorn/playjev-notes/tree/main/2048_decision_ft"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg> 2048 파인튜닝</a>
       <a class="btn btn-list" href="#gallery"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg> 게임 10개</a>
     </div>
 
@@ -236,9 +236,9 @@ Answer:</pre>
 
   <section class="wrap" id="run">
     <h2>실행 방법</h2>
-    <p>PowerShell에서 <code>2048_decision_ft</code> 폴더로 들어가 PlayJev 가상환경의 파이썬으로 실행해요. 자세한 옵션은 <a href="https://github.com/HelloAcorn/PlayLaya/tree/main/2048_decision_ft">폴더 README</a>에 있어요.</p>
+    <p>PowerShell에서 <code>2048_decision_ft</code> 폴더로 들어가 PlayJev 가상환경의 파이썬으로 실행해요. 자세한 옵션은 <a href="https://github.com/HelloAcorn/playjev-notes/tree/main/2048_decision_ft">폴더 README</a>에 있어요.</p>
     <div class="how">
-<pre><code>cd C:\workspace\PlayLaya\2048_decision_ft
+<pre><code>cd C:\workspace\playjev-notes\2048_decision_ft
 $py = "C:\workspace\PlayJev\.venv\Scripts\python.exe"
 
 # 1) 데이터: 전문가 40판
@@ -269,6 +269,7 @@ $py = "C:\workspace\PlayJev\.venv\Scripts\python.exe"
 
   <section class="wrap" id="credits">
     <h2>게임 출처</h2>
+    <p>PlayVLA는 <a href="https://github.com/OmniJev/PlayJev">PlayJev</a>를 공부하고 참고해서 만든 재구현이에요. 이미지로 수를 고르는 문장, 2048 화면을 그리는 방식, 이 페이지의 디자인, 아래 게임 묶음은 PlayJev에서 가져오거나 그에 맞춰 고쳤고, 그 코드는 <a href="licenses/PlayJev-LICENSE.txt">Apache License 2.0</a>이에요.</p>
     <p>열 개의 오픈소스 브라우저 게임을 PlayJev가 정리해 둔 사본에서 원작 라이선스(LICENSE, UPSTREAM)와 함께 가져왔어요. 바꾼 내용은 게임마다 <code>games/&lt;게임&gt;/CHANGES.md</code>에 적었어요. Infinite Mario, Floppy Bird, Racer의 그림은 원래 주인의 것이고, 라이선스는 각 작성자가 쓴 코드에 적용돼요. 페이지 디자인은 PlayJev 데모 페이지를 따랐어요.</p>
     <div class="credit-grid">
       <a href="https://github.com/gabrielecirulli/2048"><b>2048</b> <em>gabrielecirulli/2048</em> <i>MIT</i></a>
@@ -288,11 +289,11 @@ $py = "C:\workspace\PlayJev\.venv\Scripts\python.exe"
 </main>
 
 <footer class="wrap">
-  <span><a href="https://github.com/HelloAcorn/PlayLaya">PlayLaya on GitHub</a> ·
-    <a href="https://github.com/HelloAcorn/PlayLaya/tree/main/2048_decision_ft">2048_decision_ft</a> ·
+  <span><a href="https://github.com/HelloAcorn/playjev-notes">PlayVLA on GitHub</a> ·
+    <a href="https://github.com/HelloAcorn/playjev-notes/tree/main/2048_decision_ft">2048_decision_ft</a> ·
     <a href="licenses/PlayJev-LICENSE.txt">PlayJev 라이선스</a> ·
     <a href="#credits">게임 라이선스</a></span>
-  <span>PlayJev 데모 페이지 스타일 기반</span>
+  <span><a href="https://github.com/OmniJev/PlayJev">PlayJev</a>를 참고해 만들었어요 · <a href="licenses/PlayJev-LICENSE.txt">Apache-2.0</a></span>
 </footer>
 
 <script src="site.js"></script>

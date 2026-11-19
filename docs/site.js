@@ -1,5 +1,7 @@
-// PlayLaya front page. Theme and sticky bar follow PlayJev's demo.js. The stage frames one of the ten vendored
-// games at a time, cropped to the game's own board like PlayJev's demo. Every game shows the text state a
+// PlayVLA front page. Written here; not a copy of PlayJev demo/demo.js.
+// Theme and sticky bar follow PlayJev's demo.js (Apache-2.0, docs/licenses/PlayJev-LICENSE.txt).
+// The stage frames one of the ten vendored games at a time, cropped to the game's own board
+// like PlayJev's demo. Every game shows the text state a
 // decision model would read, plus that game's lettered moves (PlayJev's action list). 2048 stays on the
 // format in 2048_decision_ft/game2048.py. The other nine have no fine-tuning code yet; the panel only
 // mirrors the live game. State is read from the game's own objects (DOM for 2048, closures that are

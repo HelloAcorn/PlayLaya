@@ -1,5 +1,8 @@
 """전문가(교사) 정책: 깊이 2 expectimax(수 -> 스폰 기대값 -> 수 -> 휴리스틱), 빈칸이 적으면 한 단계 더.
-루트 수 가치에 온도 softmax를 씌워 soft target을 만듦. 보드를 안 바꾸는 수는 확률 0."""
+루트 수 가치에 온도 softmax를 씌워 soft target을 만듦. 보드를 안 바꾸는 수는 확률 0.
+
+깊이, 스폰 확률, 온도 softmax는 PlayJev playjev/teachers/2048.py (Apache-2.0)와 같다.
+이 파일의 탐색은 다시 썼고, 비트보드와 휴리스틱 가중치는 board.py에 있다."""
 from __future__ import annotations
 
 import math

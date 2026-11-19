@@ -1,5 +1,7 @@
 # 2048 의사결정 LLM 파인튜닝 (텍스트 상태창 → 수 하나)
 
+이 폴더는 [PlayJev](https://github.com/OmniJev/PlayJev)를 참고한 2048 재구현입니다. PlayJev는 Apache License 2.0이고, 전문은 [`docs/licenses/PlayJev-LICENSE.txt`](../docs/licenses/PlayJev-LICENSE.txt)에 있습니다. 가져온 것은 plain 이미지 프롬프트(`playjev_prompt.py`, `playjev/model.py`에서 채팅 템플릿과 모델 런타임을 빼고), 텍스트 경로가 같이 쓰는 그 문장(`prompt.py`, 상태창은 텍스트), 프레임 훅(`vendor/pj_shim.js`는 그대로, `vendor/pj_2048_hook.js`는 `setGrid`만 추가), 그 규격에 맞춘 PIL 렌더러(`frame.py`), 교사 비트보드(`board.py`, `playjev/teachers/2048.py`를 단순화)입니다. 목록은 [`THIRD_PARTY_NOTICES`](../THIRD_PARTY_NOTICES)에 있습니다.
+
 PlayJev가 **화면 픽셀**을 넣고 수 하나를 고르게 했다면, 여기서는 같은 계약을 **텍스트 상태창**으로 바꿉니다.
 입력은 2048 보드 상태창, 출력은 다음 수(up/down/left/right) 하나입니다. 베이스 모델도 PlayJev와 같은
 `Qwen3.5-0.8B-Base`(PlayJev 폴더에 받아 둔 로컬 체크포인트)를 쓰고, 언어 모델 부분만 올립니다.
@@ -94,7 +96,7 @@ Answer:
 PlayJev의 가상환경을 그대로 씁니다(torch 2.11 cu128, transformers 5.17).
 
 ```powershell
-cd C:\workspace\PlayLaya\2048_decision_ft
+cd C:\workspace\playjev-notes\2048_decision_ft
 $py = "C:\workspace\PlayJev\.venv\Scripts\python.exe"
 
 # 1) 데이터: 전문가 40판 (약 6만 샘플, CPU로 십수 분)
@@ -333,7 +335,7 @@ GPU 본학습과 10판 평가는 이 환경에서 돌리지 않았다. `test_bas
 이 폴더에서:
 
 ```powershell
-cd C:\workspace\PlayLaya\2048_decision_ft
+cd C:\workspace\playjev-notes\2048_decision_ft
 & "C:\workspace\PlayJev\.venv\Scripts\python.exe" -u record_image_replays.py --adapter ckpt\base_image\best --games 10 --out ..\docs\games\2048\replays\my_model.json
 ```
 
