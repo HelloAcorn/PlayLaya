@@ -58,11 +58,9 @@
 
         <script src="code/music.js"></script>
 
-        <script>/* PlayVLA: upstream used $(document).ready from a jQuery CDN that this copy does not load.
-           playlayaApp is the same instance, kept so the front page can read the current state. */
+        <script>/* PlayVLA: upstream used $(document).ready from a jQuery CDN that this copy does not load. */
         document.addEventListener("DOMContentLoaded", function() {
           var app = new Enjine.Application();
-          window.playlayaApp = app;
           app.Initialize(new Mario.LoadingState(), 320, 240);
         });</script>
 	</body>

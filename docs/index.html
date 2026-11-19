@@ -56,7 +56,7 @@
       </div>
       <div id="stage" class="stage">
         <div class="tile hero" id="hero">
-          <div class="head"><span class="title" id="hero-title">2048</span><span class="score" id="hero-score"></span></div>
+          <div class="head"><span class="title" id="hero-title">2048</span></div>
           <div class="deck">
             <button type="button" id="btn-new">새 게임</button>
             <button type="button" id="btn-focus">키보드 연결</button>
@@ -67,16 +67,7 @@
               <iframe id="game" title="2048" src="games/2048/index.html?embed" scrolling="no"></iframe>
             </div>
           </div>
-          <div class="state-wrap" id="ro-main">
-            <p class="readout-label">모델이 보는 상태창 (지금 보드)</p>
-            <pre class="state" id="state">불러오는 중</pre>
-          </div>
-          <div class="opts-wrap" id="ro-side">
-            <p class="readout-label">선택지: 보드를 실제로 바꾸는 수만</p>
-            <div class="opts" id="opts"></div>
-          </div>
-          <div class="trace"></div>
-          <div class="foot"><span class="rec" id="hero-note"></span></div>
+          <p class="game-blurb" id="game-blurb">같은 숫자 타일을 밀어 합쳐 2048 타일을 만드는 퍼즐이에요. 한 방향으로 밀면 그 줄의 타일이 모두 움직이고, 같은 숫자가 만나면 두 배가 돼요. 방향키나 스와이프로 위, 아래, 왼쪽, 오른쪽으로 밉니다.</p>
         </div>
       </div>
     </div>
@@ -90,7 +81,7 @@
         <div class="head"><span class="title">2048</span><span class="score">MIT</span></div>
         <a class="board view" href="?game=2048#top" data-pick="2048" style="--poster:url('assets/poster/2048.webp')" aria-label="2048 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>텍스트 상태창 파인튜닝 코드가 있어요.</p>
+          <p>파인튜닝 코드가 있어요.</p>
           <div class="links"><a href="games/2048/index.html" target="_blank" rel="noopener">단독 페이지</a><a href="#how">파인튜닝</a><a href="https://github.com/gabrielecirulli/2048">원작</a></div>
         </div>
       </div>
@@ -98,7 +89,6 @@
         <div class="head"><span class="title">Tetris</span><span class="score">MIT</span></div>
         <a class="board view" href="?game=tetris#top" data-pick="tetris" style="--poster:url('assets/poster/tetris.webp')" aria-label="Tetris 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>위 보드에서 텍스트 상태창을 볼 수 있어요. 파인튜닝 코드는 아직 없어요.</p>
           <div class="links"><a href="games/tetris/index.html" target="_blank" rel="noopener">단독 페이지</a><a href="https://github.com/jakesgordon/javascript-tetris">원작</a></div>
         </div>
       </div>
@@ -106,7 +96,6 @@
         <div class="head"><span class="title">Snake</span><span class="score">MIT</span></div>
         <a class="board view" href="?game=snake#top" data-pick="snake" style="--poster:url('assets/poster/snake.webp')" aria-label="Snake 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>위 보드에서 텍스트 상태창을 볼 수 있어요. 파인튜닝 코드는 아직 없어요.</p>
           <div class="links"><a href="games/snake/src/index.html" target="_blank" rel="noopener">단독 페이지</a><a href="https://github.com/patorjk/JavaScript-Snake">원작</a></div>
         </div>
       </div>
@@ -114,7 +103,6 @@
         <div class="head"><span class="title">Pacman</span><span class="score">WTFPL</span></div>
         <a class="board view" href="?game=pacman#top" data-pick="pacman" style="--poster:url('assets/poster/pacman.webp')" aria-label="Pacman 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>위 보드에서 텍스트 상태창을 볼 수 있어요. 파인튜닝 코드는 아직 없어요.</p>
           <div class="links"><a href="games/pacman/index.html" target="_blank" rel="noopener">단독 페이지</a><a href="https://github.com/daleharvey/pacman">원작</a></div>
         </div>
       </div>
@@ -122,7 +110,6 @@
         <div class="head"><span class="title">Javascript Racer</span><span class="score">MIT</span></div>
         <a class="board view" href="?game=racer#top" data-pick="racer" style="--poster:url('assets/poster/racer.webp')" aria-label="Javascript Racer 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>위 보드에서 텍스트 상태창을 볼 수 있어요. 파인튜닝 코드는 아직 없어요.</p>
           <div class="links"><a href="games/racer/v4.final.html" target="_blank" rel="noopener">단독 페이지</a><a href="https://github.com/jakesgordon/javascript-racer">원작</a></div>
         </div>
       </div>
@@ -130,7 +117,6 @@
         <div class="head"><span class="title">Space Invaders</span><span class="score">MIT</span></div>
         <a class="board view" href="?game=invaders#top" data-pick="invaders" style="--poster:url('assets/poster/invaders.webp')" aria-label="Space Invaders 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>위 보드에서 텍스트 상태창을 볼 수 있어요. 파인튜닝 코드는 아직 없어요.</p>
           <div class="links"><a href="games/invaders/index.html" target="_blank" rel="noopener">단독 페이지</a><a href="https://github.com/StrykerKKD/SpaceInvaders">원작</a></div>
         </div>
       </div>
@@ -138,7 +124,6 @@
         <div class="head"><span class="title">Sokoban</span><span class="score">MIT</span></div>
         <a class="board view" href="?game=sokoban#top" data-pick="sokoban" style="--poster:url('assets/poster/sokoban.webp')" aria-label="Sokoban 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>위 보드에서 텍스트 상태창을 볼 수 있어요. 파인튜닝 코드는 아직 없어요.</p>
           <div class="links"><a href="games/sokoban/index.html" target="_blank" rel="noopener">단독 페이지</a><a href="https://github.com/taniarascia/sokoban">원작</a></div>
         </div>
       </div>
@@ -146,7 +131,6 @@
         <div class="head"><span class="title">Infinite Mario</span><span class="score">Unlicense</span></div>
         <a class="board view" href="?game=mario#top" data-pick="mario" style="--poster:url('assets/poster/mario.webp')" aria-label="Infinite Mario 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>위 보드에서 텍스트 상태창을 볼 수 있어요. 파인튜닝 코드는 아직 없어요.</p>
           <div class="links"><a href="games/mario/main.html" target="_blank" rel="noopener">단독 페이지</a><a href="https://github.com/robertkleffner/mariohtml5">원작</a></div>
         </div>
       </div>
@@ -154,7 +138,6 @@
         <div class="head"><span class="title">Floppy Bird</span><span class="score">Apache-2.0</span></div>
         <a class="board view" href="?game=flappy#top" data-pick="flappy" style="--poster:url('assets/poster/flappy.webp')" aria-label="Floppy Bird 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>위 보드에서 텍스트 상태창을 볼 수 있어요. 파인튜닝 코드는 아직 없어요.</p>
           <div class="links"><a href="games/flappy/index.html" target="_blank" rel="noopener">단독 페이지</a><a href="https://github.com/nebez/floppybird">원작</a></div>
         </div>
       </div>
@@ -162,7 +145,6 @@
         <div class="head"><span class="title">Breakout</span><span class="score">MIT</span></div>
         <a class="board view" href="?game=breakout#top" data-pick="breakout" style="--poster:url('assets/poster/breakout.webp')" aria-label="Breakout 위 보드에서 플레이"></a>
         <div class="foot">
-          <p>위 보드에서 텍스트 상태창을 볼 수 있어요. 파인튜닝 코드는 아직 없어요.</p>
           <div class="links"><a href="games/breakout/index.html" target="_blank" rel="noopener">단독 페이지</a><a href="https://github.com/jakesgordon/javascript-breakout">원작</a></div>
         </div>
       </div>
@@ -171,7 +153,7 @@
 
   <section class="wrap" id="how">
     <h2>2048 파인튜닝</h2>
-    <p>게임 10개 중 파인튜닝 코드가 있는 건 지금 2048 하나예요. 나머지 9개도 위 보드에서 같은 형식의 텍스트 상태창과 글자 선택지를 보여 주지만, 파인튜닝 코드는 아직 없어요.</p>
+    <p>게임 10개 중 파인튜닝 코드가 있는 건 지금 2048 하나예요. 나머지 9개는 위 보드에서 직접 둘 수 있고, 파인튜닝 코드는 아직 없어요.</p>
     <div class="how">
       <div class="how-copy">
         <p>PlayJev가 화면 픽셀을 넣고 수 하나를 고르게 했다면, 여기서는 같은 계약을 <b>텍스트 상태창</b>으로 바꿨어요. 입력은 2048 보드 상태창이고, 출력은 다음 수(up, down, left, right) 하나예요.</p>
