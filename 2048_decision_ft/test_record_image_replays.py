@@ -4,6 +4,7 @@
 
 docs/games/2048/replays/fixture_player.json 은 이 스텁으로 만든 짧은 판이다.
 페이지 기본 경로는 my_model.json 이고, 그 픽스처를 읽지 않는다.
+my_model.json 은 공개된 모델 녹화다. 스텁은 그 경로를 덮어쓰지 않는지만 본다.
 """
 from __future__ import annotations
 
@@ -26,9 +27,12 @@ from record_image_replays import (  # noqa: E402
 )
 
 FIXTURE = REPO / "docs" / "games" / "2048" / "replays" / "fixture_player.json"
+PUBLISHED = REPO / "docs" / "games" / "2048" / "replays" / "my_model.json"
 PAGE = REPO / "docs" / "games" / "2048"
 FIXTURE_SEEDS = [11, 29]
 FIXTURE_MOVES = 8
+# model_replay.js hardcodes this order and indexes each move's p vector with it.
+PLAYER_DIRS = ("up", "down", "left", "right")
 
 
 class RecordReplayTest(unittest.TestCase):
@@ -86,7 +90,31 @@ class RecordReplayTest(unittest.TestCase):
             record_games(stub_probs, FIXTURE_SEEDS, FIXTURE_MOVES, batch=1),
             "stub", None, fixture=True)
         self.assertEqual(got, fresh)
-        self.assertFalse((PAGE / "replays" / "my_model.json").exists())
+        self.assertTrue(PUBLISHED.is_file())
+        published = json.loads(PUBLISHED.read_text(encoding="utf-8"))
+        self.assertNotEqual(published, got)
+        self.assertFalse(published.get("fixture"))
+        self.assertNotEqual(published.get("model"), "stub")
+        self.assertEqual(published.get("dirs"), list(PLAYER_DIRS))
+        games = published["games"]
+        self.assertEqual(len(games), 10)
+        self.assertEqual(len({g["seed"] for g in games}), 10)
+        for g in games:
+            self.assertIsInstance(g["seed"], int)
+            self.assertIsInstance(g["score"], int)
+            self.assertIsInstance(g["max_tile"], int)
+            self.assertGreater(g["max_tile"], 0)
+            frames = _player_frames(g)
+            actions = [f for f in frames if f.get("m")]
+            self.assertGreater(len(actions), 0)
+            self.assertEqual(len(actions), len(g["moves"]))
+            for mv in actions:
+                self.assertIn(mv["m"], PLAYER_DIRS)
+                self.assertEqual(len(mv["g"]), 16)
+                self.assertEqual(len(mv["p"]), 4)
+                self.assertIsInstance(mv["s"], int)
+            self.assertEqual(g["score"], actions[-1]["s"])
+            self.assertEqual(g["max_tile"], max(actions[-1]["g"]))
 
     def test_page_fetches_my_model_not_the_fixture(self):
         html = (PAGE / "index.html").read_text(encoding="utf-8")
@@ -114,12 +142,18 @@ class RecordReplayTest(unittest.TestCase):
             self.assertTrue(data["fixture"])
             self.assertEqual([g["seed"] for g in data["games"]], [11, 29])
             self.assertTrue(all(len(g["moves"]) <= 4 for g in data["games"]))
-        refused = subprocess.run(
-            [sys.executable, str(ROOT / "record_image_replays.py"), "--stub", "--games", "1", "--max_moves", "2"],
-            cwd=ROOT, capture_output=True, text=True)
-        self.assertNotEqual(refused.returncode, 0)
-        self.assertIn("my_model.json", refused.stderr)
-        self.assertFalse((PAGE / "replays" / "my_model.json").exists())
+        before = PUBLISHED.read_bytes()
+        try:
+            refused = subprocess.run(
+                [sys.executable, str(ROOT / "record_image_replays.py"), "--stub", "--games", "1", "--max_moves", "2"],
+                cwd=ROOT, capture_output=True, text=True)
+            self.assertNotEqual(refused.returncode, 0)
+            self.assertIn("my_model.json", refused.stderr)
+            self.assertIn("--out", refused.stderr)
+            self.assertEqual(PUBLISHED.read_bytes(), before)
+        finally:
+            if PUBLISHED.read_bytes() != before:
+                PUBLISHED.write_bytes(before)
 
     def test_missing_adapter_exits_before_loading_a_model(self):
         with tempfile.TemporaryDirectory() as d:
@@ -136,6 +170,19 @@ class RecordReplayTest(unittest.TestCase):
 
 def _flat(game: Game2048) -> list[int]:
     return [v for row in B.to_grid(game.board) for v in row]
+
+
+def _player_frames(game: dict) -> list[dict]:
+    """Same frames model_replay.js framesOf keeps: a 16-cell start, then moves with a 16-cell grid."""
+    frames = []
+    start = game.get("start")
+    if start and len(start) == 16:
+        frames.append({"g": start, "m": None, "s": 0, "p": None})
+    for move in game.get("moves") or []:
+        grid = move.get("g") if isinstance(move, dict) else None
+        if grid and len(grid) == 16:
+            frames.append(move)
+    return frames
 
 
 if __name__ == "__main__":
