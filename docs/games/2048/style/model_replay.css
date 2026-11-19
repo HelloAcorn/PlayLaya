@@ -1,0 +1,45 @@
+/* 녹화된 이미지 모델 재생. 타일 모양은 main.css 의 .tile 을 그대로 쓴다. */
+.model-replay { clear: both; margin-top: 14px; }
+.model-watch, .model-controls button {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: bold;
+  background: #8f7a66;
+  color: #f9f6f2;
+  border: 0;
+  border-radius: 3px;
+  height: 40px;
+  padding: 0 14px;
+  cursor: pointer;
+}
+.model-watch:hover, .model-controls button:hover { background: #9f8a76; }
+.model-watch:focus-visible, .model-controls button:focus-visible,
+.model-speed input:focus-visible {
+  outline: 2px solid #776e65;
+  outline-offset: 2px;
+}
+.model-watch:disabled { opacity: 0.6; cursor: default; }
+html.model-watching .restart-button { display: none; }
+.model-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.model-speed { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; }
+.model-speed input { width: 110px; }
+.model-status {
+  display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.model-bars {
+  display: grid; grid-template-columns: 3.2em 1fr 3em; gap: 4px 8px;
+  align-items: center; margin-top: 8px; font-size: 14px;
+}
+.model-bar { display: contents; }
+.model-bar .track { height: 8px; background: #cdc1b4; border-radius: 4px; overflow: hidden; }
+.model-bar .track i { display: block; height: 100%; width: 0; background: #8f7a66; }
+.model-bar.on { font-weight: bold; }
+.model-bar.on .track i { background: #f67c5f; }
+.model-note, .model-empty { font-size: 14px; margin: 8px 0 0; }
+.model-empty { margin-bottom: 0; }
+
+@media screen and (max-width: 520px) {
+  .model-watch, .model-controls button { font-size: 14px; height: 36px; padding: 0 10px; }
+  .model-speed input { width: 80px; }
+}

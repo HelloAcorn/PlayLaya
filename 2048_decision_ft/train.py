@@ -1,6 +1,7 @@
 """LoRA SFT. 손실 = 전문가 soft target과 '합법 수 글자' softmax 사이의 교차 엔트로피 (PlayJev train_sft와 같은 방식).
 다음 토큰 손실이나 텍스트 정답은 학습하지 않음. 선택지 순서는 샘플마다 무작위로 섞어 글자 위치 편향을 없앰.
 정밀도: 베이스 fp16 고정, LoRA 가중치 fp32, fp16 autocast + GradScaler, 판독은 fp32.
+--input image 는 화면 한 장 경로(train_image.py)다. 기본값 text 의 학습 루프는 그대로다.
 
   python train.py --data data/clone.jsonl --out ckpt/run1
   python train.py --data data/clone.jsonl --out ckpt/smoke --max_steps 2 --limit 64
@@ -45,6 +46,18 @@ def split(recs, frac):
     for r in recs:
         key = f"{r['_src']}:{r['seed']}".encode()
         (va if (zlib.crc32(key) % 1000) < frac * 1000 else tr).append(r)
+    return tr, va
+
+
+def training_split(recs, limit: int, eval_samples: int):
+    """텍스트와 이미지 학습이 같은 식으로 학습/검증을 가른다."""
+    tr, va = split(recs, C.VAL_FRACTION)
+    if not va:  # 스모크처럼 에피소드가 너무 적을 때
+        va = tr[-max(4, len(tr) // 20):]
+        tr = tr[: len(tr) - len(va)]
+    if limit:
+        tr, va = tr[: limit], va[: max(4, limit // 4)]
+    va = va[: eval_samples]
     return tr, va
 
 
@@ -99,6 +112,11 @@ def evaluate(model, loader, slot_ids, device):
 
 
 def main(a):
+    if a.input == "image" or a.dry_run or a.smoke:
+        if (a.dry_run or a.smoke) and a.input != "image":
+            raise SystemExit("[dry-run] 이 스모크는 --input image 용입니다. 텍스트 스모크는 --max_steps 2 --limit 32")
+        from train_image import main as image_main
+        return image_main(a)
     torch.manual_seed(a.seed); random.seed(a.seed)
     device = torch.device(a.device)
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
@@ -109,12 +127,7 @@ def main(a):
         log.write(json.dumps(rec, ensure_ascii=False) + "\n"); log.flush()
 
     recs = load_records(a.data)
-    tr, va = split(recs, C.VAL_FRACTION)
-    if not va:  # 스모크처럼 에피소드가 너무 적을 때
-        va = tr[-max(4, len(tr) // 20):]; tr = tr[: len(tr) - len(va)]
-    if a.limit:
-        tr, va = tr[: a.limit], va[: max(4, a.limit // 4)]
-    va = va[: a.eval_samples]
+    tr, va = training_split(recs, a.limit, a.eval_samples)
     emit({"event": "data", "records": len(recs), "train": len(tr), "val": len(va)})
 
     tok, model = load_base(a.model, a.device)
@@ -184,4 +197,25 @@ if __name__ == "__main__":
     p.add_argument("--eval_every", type=int, default=C.EVAL_EVERY)
     p.add_argument("--eval_samples", type=int, default=C.EVAL_SAMPLES)
     p.add_argument("--seed", type=int, default=C.SEED)
+    p.add_argument("--input", choices=("text", "image"), default="text")
+    p.add_argument("--dry-run", action="store_true", help="이미지 스모크: 프레임/프롬프트/프로세서만 확인하고 학습하지 않음")
+    p.add_argument("--smoke", action="store_true", help="--dry-run 과 같음")
+    p.add_argument("--renderer", choices=("pil", "playwright"), default=C.IMAGE_RENDERER)
+    p.add_argument("--dtype", default=None, help="image 가중치 dtype. 기본 float16. PlayJev 로더와 맞추려면 bfloat16")
+    p.add_argument("--freeze-vision", action=argparse.BooleanOptionalAction, default=True,
+                   help="image: 비전 타워를 얼리고 언어 모델만 LoRA (8GB 기본값)")
+    p.add_argument("--no-grad-ckpt", action="store_true", help="image gradient checkpointing 을 끈다. 기본은 켜짐")
+    p.add_argument("--label", choices=("soft", "hard"), default="soft",
+                   help="image 손실. soft 는 전문가 분포, hard 는 그 argmax 한 글자")
+    p.add_argument("--game_eval_every", type=int, default=0,
+                   help="image: N optimizer step 마다 10판. 0 이면 끄고, 예전처럼 검증 일치율로 best 를 고른다")
+    p.add_argument("--game_eval_games", type=int, default=C.BASE_EVAL_GAMES)
+    p.add_argument("--game_eval_seed_base", type=int, default=C.BASE_EVAL_SEED_BASE)
+    p.add_argument("--game_eval_max_moves", type=int, default=C.BASE_EVAL_MAX_MOVES)
+    p.add_argument("--kl_patience", type=int, default=C.BASE_KL_PATIENCE,
+                   help="게임 평가에서 검증 KL 이 이 횟수만큼 연속으로 안 줄면 멈춘다")
+    p.add_argument("--score_patience", type=int, default=C.BASE_SCORE_PATIENCE)
+    p.add_argument("--score_drop", type=float, default=C.BASE_SCORE_DROP,
+                   help="10판 평균이 최고보다 이 비율 넘게 낮으면 한 번으로 센다. 기본 0.30")
+    p.add_argument("--no_early_stop", action="store_true")
     main(p.parse_args())
