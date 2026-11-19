@@ -9,6 +9,7 @@ my_model.json 은 공개된 모델 녹화다. 스텁은 그 경로를 덮어쓰�
 from __future__ import annotations
 
 import json
+import os
 import random
 import subprocess
 import sys
@@ -146,7 +147,9 @@ class RecordReplayTest(unittest.TestCase):
         try:
             refused = subprocess.run(
                 [sys.executable, str(ROOT / "record_image_replays.py"), "--stub", "--games", "1", "--max_moves", "2"],
-                cwd=ROOT, capture_output=True, text=True)
+                cwd=ROOT, capture_output=True, text=True,
+                encoding="utf-8", errors="replace",
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"})
             self.assertNotEqual(refused.returncode, 0)
             self.assertIn("my_model.json", refused.stderr)
             self.assertIn("--out", refused.stderr)
@@ -162,7 +165,9 @@ class RecordReplayTest(unittest.TestCase):
                 [sys.executable, str(ROOT / "record_image_replays.py"),
                  "--adapter", str(Path(d) / "no-such-adapter"), "--games", "1",
                  "--out", str(out)],
-                cwd=ROOT, capture_output=True, text=True)
+                cwd=ROOT, capture_output=True, text=True,
+                encoding="utf-8", errors="replace",
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"})
             self.assertNotEqual(refused.returncode, 0)
             self.assertIn("어댑터가 없습니다", refused.stderr)
             self.assertFalse(out.exists())
