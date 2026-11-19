@@ -7,6 +7,7 @@
 
   <link href="style/main.css" rel="stylesheet" type="text/css">
   <link href="style/playlaya_embed.css" rel="stylesheet" type="text/css">
+  <link href="style/model_replay.css" rel="stylesheet" type="text/css">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="meta/apple-touch-icon.png">
   <link rel="apple-touch-startup-image" href="meta/apple-touch-startup-image-640x1096.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)"> <!-- iPhone 5+ -->
@@ -31,6 +32,31 @@
     <div class="above-game">
       <p class="game-intro">Join the numbers and get to the <strong>2048 tile!</strong></p>
       <a class="restart-button">New Game</a>
+    </div>
+
+    <div class="model-replay" id="model-replay">
+      <button type="button" class="model-watch" id="model-watch">내 모델 플레이 보기</button>
+      <p class="model-empty" id="model-empty" hidden>아직 녹화된 판이 없습니다. 파일이 올라오면 여기서 모델의 한 판을 볼 수 있어요.</p>
+      <div class="model-panel" id="model-panel" hidden>
+        <div class="model-controls">
+          <button type="button" id="model-play">일시정지</button>
+          <button type="button" id="model-step">한 수</button>
+          <button type="button" id="model-next">새 게임</button>
+          <button type="button" id="model-human">직접 두기</button>
+          <label class="model-speed">속도
+            <input id="model-speed-range" type="range" min="1" max="20" value="4">
+            <span id="model-speed-label">4수/초</span>
+          </label>
+        </div>
+        <div class="model-status">
+          <span id="model-score">점수 0</span>
+          <span id="model-move">이번 수 시작</span>
+          <span id="model-progress"></span>
+          <span id="model-seed"></span>
+        </div>
+        <div class="model-bars" id="model-bars"></div>
+      </div>
+      <p class="model-note" id="model-note" hidden>미리 기록해 둔 판 중에서 무작위로 고릅니다. 이 모델은 나중에 Hugging Face에 공개할 예정입니다.</p>
     </div>
 
     <div class="game-container">
@@ -97,5 +123,6 @@
   <script src="js/local_storage_manager.js"></script>
   <script src="js/game_manager.js"></script>
   <script src="js/application.js"></script>
+  <script src="js/model_replay.js"></script>
 </body>
 </html>

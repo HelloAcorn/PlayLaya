@@ -85,6 +85,7 @@ Answer:
 | `test_image.py` | CPU 스모크 (프레임, 프롬프트, 텍스트 경로 회귀) |
 | `game_metrics.py` | 10판 지표(jsonl/csv), 곡선, 버킷, 조기 종료 |
 | `run_base_image.py` | 베이스 모델 런: 데이터, 1천 과적합 확인, 본학습 |
+| `record_image_replays.py` | 이미지 모델 N판을 `docs/games/2048/replays/my_model.json` 으로 기록 |
 | `run_base_image.ps1` | 위 드라이버를 Windows 에서 떼어 실행 |
 | `test_base_image.py` | 지표/곡선/버킷/조기 종료, CPU 에서 작은 모델로 한 줄 |
 
@@ -317,3 +318,36 @@ python test_base_image.py
 ```
 
 GPU 본학습과 10판 평가는 이 환경에서 돌리지 않았다. `test_base_image.py` 가 지표 파일과 곡선을 CPU 에서 확인하고, 프로세서를 받을 수 있으면 층을 줄인 무작위 Qwen3.5 로 한 수를 두어 같은 기록 함수에 넣는다.
+
+## 페이지에 모델 플레이를 올리기
+
+사이트(`docs/games/2048/index.html`)의 **내 모델 플레이 보기**는 서버 없이, 미리 기록한 판만 재생한다.
+가중치는 올리지 않는다. 파일 하나만 커밋하면 된다. `docs/games/2048/replays/my_model.json`.
+
+기록은 이미지 평가와 같은 로딩이다. `ckpt\base_image\best\adapter_config.json` 의 `base_model` 을 읽고
+(이 PC에서는 `C:\workspace\PlayJev\models\Qwen3.5-0.8B-Base`), float16 으로 `ImagePolicy` 를 올린 뒤
+살아 있는 판을 같이 둔다. 프레임은 `--batch` 장씩 넣는다. 기본 1 은 8GB 평가와 같다.
+10판은 학습 때 10판 평가와 같은 정도로, 수 분이 걸린다. 시드를 생략하면 실행마다 새로 뽑아 파일에 적고,
+평가 시드 100000-100009 는 넣지 않는다.
+
+이 폴더에서:
+
+```powershell
+cd C:\workspace\PlayLaya\2048_decision_ft
+& "C:\workspace\PlayJev\.venv\Scripts\python.exe" -u record_image_replays.py --adapter ckpt\base_image\best --games 10 --out ..\docs\games\2048\replays\my_model.json
+```
+
+시드를 고정하려면 `--seeds 184920 99321 44012` 처럼 붙인다. `--model` 을 주면 어댑터에 적힌 베이스 대신 그 경로를 쓴다.
+
+JSON 은 한 줄이다. 판마다 `seed`, `score`, `max_tile`, `done`, 시작 그리드 `start`(길이 16, 행 우선).
+수마다 `m`(up/down/left/right), `s`(그 수 다음 점수), `g`(수 다음 그리드), `p`(위, 아래, 왼쪽, 오른쪽 확률. 불법 수는 0).
+
+만든 파일을 커밋하고 푸시하면 GitHub Pages 가 그 판을 보여 준다. 페이지는 파일을 열 때마다 그 안의 판을 하나 무작위로 고른다.
+모델 가중치를 Hugging Face 에 올리는 주소는 아직 없다. 페이지 문구만 그렇게 적혀 있다.
+
+`replays/fixture_player.json` 은 CPU 스텁으로 만든 확인용 짧은 판이다. 페이지는 읽지 않는다.
+형식만 보려면 기본 출력 경로를 피해 `--stub --out` 을 쓴다.
+
+```powershell
+python test_record_image_replays.py
+```
