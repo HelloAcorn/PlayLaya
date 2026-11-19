@@ -1,7 +1,9 @@
 """이미지 모델 로딩과 글자 슬롯 판독.
 
-PlayJev playjev/model.py 의 PlayJevModel 과 같다. AutoProcessor + AutoModelForImageTextToText,
-plain 프롬프트, 마지막 위치에서 합법 수 글자 토큰(' A' ..)만 softmax.
+판독 자리는 PlayJev playjev/model.py 의 PlayJevModel._forward 와 같다 (Apache-2.0,
+docs/licenses/PlayJev-LICENSE.txt). 이 파일은 그 자리를 다시 쓴 것이고 PlayJevModel 은
+복사하지 않았다. AutoProcessor + AutoModelForImageTextToText, plain 프롬프트,
+마지막 위치에서 합법 수 글자 토큰(' A' ..)만 softmax.
 전체 어휘 로짓은 만들지 않고, 그 행만 fp32 로 캐스팅한다 (bf16 로짓이 동점이 되는 문제를 피하려고).
 
 dtype 기본값은 float16 이다. PlayJev 자체 로더는 bfloat16 이지만 RTX 2070 SUPER(Turing)에는

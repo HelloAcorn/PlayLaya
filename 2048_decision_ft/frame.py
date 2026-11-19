@@ -1,5 +1,9 @@
 """2048 보드를 PlayJev 학습 분포에 맞게 한 장의 JPEG 로 그린다.
 
+배치와 JPEG 계약은 OmniJev/PlayJev games/2048/pj_hook.js canvas() 와
+games/_shared/pj_shim.js frame() 에서 가져왔다 (Apache-2.0,
+docs/licenses/PlayJev-LICENSE.txt). 이 파일의 PIL 그리기는 새로 쓴 것이다.
+
 PlayJev 는 페이지 전체가 아니라 games/2048/pj_hook.js 의 canvas() 로 500×500 보드만 그리고,
 games/_shared/pj_shim.js 의 frame() 이 긴 변을 448px 로 줄인 뒤 JPEG 품질 0.85 로 뽑는다.
 점수/제목은 프레임에 없다. 한 수에 프레임 하나.

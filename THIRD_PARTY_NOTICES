@@ -1,0 +1,97 @@
+Third-party notices
+===================
+
+This repository has no LICENSE file of its own. The notes below attribute
+code taken from other projects. They are not a license for the rest of
+this tree. Each browser game under docs/games/ keeps the license file its
+own author shipped.
+
+PlayJev
+-------
+
+Project: PlayJev
+Upstream: https://github.com/OmniJev/PlayJev
+License: Apache License, Version 2.0
+(The LICENSE file is Apache-2.0. It is not the MIT license.)
+
+License text: docs/licenses/PlayJev-LICENSE.txt
+That file is a verbatim copy of PlayJev's LICENSE, compared on 2026-11-19.
+
+Copyright: the PlayJev source files copied here do not carry a separate
+copyright line. The Apache-2.0 grant is the repository LICENSE. The
+copyright holders are the PlayJev contributors (the OmniJev project).
+
+NOTICE: PlayJev has no NOTICE file. The repository root listing on
+2026-11-19 is .gitignore, GAMES.md, LICENSE, README.md, demo/, docs/,
+games/, playjev/, requirements.txt, scripts/. A filename search for
+NOTICE returned nothing. There is no NOTICE text to carry over.
+
+What was copied or adapted, and how it was changed:
+
+- 2048_decision_ft/playjev_prompt.py
+  From playjev/model.py, the plain-template builders only (openjev-letters-v1
+  sentence, state block, lettered options, "Answer:" cue). The chat
+  template, temporal frame stacking, and PlayJevModel runtime are not
+  copied. The 2048 option sentences are the long descriptions from
+  games/2048/pj_hook.js.
+
+- 2048_decision_ft/prompt.py
+  Same system sentence and plain "Answer:" layout. Modified so <state> is
+  a text board, with short option phrases written here.
+
+- 2048_decision_ft/vendor/pj_shim.js
+  games/_shared/pj_shim.js. The script body is unchanged. An attribution
+  header was added.
+
+- 2048_decision_ft/vendor/pj_2048_hook.js
+  games/2048/pj_hook.js. Modified by adding setGrid(rows), which paints a
+  board that came from the Python engine and then calls the unchanged
+  canvas()/frame() path.
+
+- 2048_decision_ft/frame.py
+  New PIL renderer. The 500x500 board geometry and the 448px JPEG quality
+  0.85 contract follow pj_hook.js canvas() and pj_shim.js frame().
+
+- 2048_decision_ft/board.py
+  playjev/teachers/2048.py, simplified. The 64-bit nibble layout and the
+  line heuristic match the teacher. Up and down go through a transpose
+  instead of the column-unpack tables, and each move also returns the
+  score gained. The teacher class is not copied.
+
+- 2048_decision_ft/expert.py
+  Not a copy of the teacher. The depth-2 expectimax, spawn odds, and
+  temperature softmax follow playjev/teachers/2048.py. The search is
+  rewritten and calls board.py.
+
+- 2048_decision_ft/image_policy.py
+  Not a copy of PlayJevModel. The letter-slot readout uses the same place
+  in the network (last token of model.model) as PlayJevModel._forward.
+
+- docs/site.css
+  demo/demo.css, modified. PlayJev's rules are kept. Rules added for this
+  front page are marked "PlayVLA additions" at the bottom of the file.
+
+- docs/pj_silence.js
+  demo/pj_silence.js. The script body is unchanged. An attribution header
+  was added.
+
+- docs/site.js
+  Written here. It is not a copy of demo/demo.js. The theme toggle and
+  sticky bar follow that demo.
+
+- docs/games/<game>/
+  The ten browser games, taken from PlayJev's demo/games/ bundle, which
+  itself vendored other authors' games. Each game keeps that author's
+  LICENSE and UPSTREAM. PlayJev's own patches inside those copies (the
+  silence script, Pacman's read-only getters, Sokoban's Microban levels,
+  and the notes in each CHANGES.md) are Apache-2.0. This repository
+  removed PlayJev's training hooks so the pages play from the keyboard,
+  and added the small front-page handles named in each CHANGES.md.
+
+The image-training loss (cross-entropy between an expert soft target and
+the model's letter distribution) is the same kind of objective as PlayJev
+train_sft.py. That training script was not copied.
+
+The text "Laya" in this repository names the convaiinnovations/laya model
+used in experiments. It is not the PlayVLA site name, and those modules
+were not renamed.

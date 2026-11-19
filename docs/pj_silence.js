@@ -1,3 +1,9 @@
+// Vendored from OmniJev/PlayJev demo/pj_silence.js (Apache License 2.0).
+// https://github.com/OmniJev/PlayJev/blob/main/demo/pj_silence.js
+// License text: docs/licenses/PlayJev-LICENSE.txt
+// Upstream file has no copyright header. The grant is the PlayJev LICENSE.
+// Modified: this attribution header only. The script below is unchanged.
+//
 // The roster ships silent: every sound file was deleted from the vendored games. The game code
 // still asks for them, so on a served page each of those requests is a 404 in the console. This
 // cuts the request before it is made. Demo only. During collection the driver aborts audio

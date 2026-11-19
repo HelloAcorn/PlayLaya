@@ -1,8 +1,9 @@
 // Vendored from OmniJev/PlayJev games/2048/pj_hook.js (Apache-2.0).
 // https://github.com/OmniJev/PlayJev/blob/main/games/2048/pj_hook.js
 // License text: docs/licenses/PlayJev-LICENSE.txt
-// The only addition is setGrid(rows): paint a board that came from the Python engine,
-// then call the unchanged canvas()/pj.frame() path. Drawing code is PlayJev's.
+// Upstream file has no copyright header. The grant is the PlayJev LICENSE.
+// Modified: this header, and setGrid(rows), which paints a board from the Python
+// engine and then calls the unchanged canvas()/pj.frame() path. Drawing code is PlayJev's.
 //
 // PlayJev hook for gabrielecirulli/2048 (DOM game, turn based, no game loop).
 // The whole game state lives on one GameManager instance: grid.cells[x][y] holds Tile objects,
